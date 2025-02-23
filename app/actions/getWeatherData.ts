@@ -1,20 +1,17 @@
-'use server'
+"use server";
 
-async function getWeatherData({lat,long}: {lat:number,long:number}) {
+export async function getWeatherData(lat: number, long: number) {
+  const apiKey = process.env.OPENWEATHERMAP_API_KEY;
+  const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${long}&units=metric&appid=${apiKey}`;
 
-    //test için
-    const latitude = 41.0082; // İstanbul'un enlemi
-    const longitude = 28.9784; // İstanbul'un boylamı
-    const city = "İstanbul"
-    const url = `https://api.openweathermap.org/data/2.5/weather?q=${city}&units=metric&appid=${process.env.OPENWEATHERMAP_API_KEY}`;
-    try {
-        const res = await fetch(url);
-        const data = await res.json()
-        return data
-    } catch (error) {
-        console.error('Error fetching weather data:', error);
-        throw error;
-    }
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error("Hava durumu bilgisi alınamadı.");
+    
+    const data = await res.json();
+    return data;
+  } catch (error) {
+    console.error("API Hatası:", error);
+    return { error: "Hava durumu bilgisi alınamadı." };
+  }
 }
-
-export default getWeatherData;
