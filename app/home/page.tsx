@@ -6,9 +6,11 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { getWeatherData } from "../actions/getWeatherData";
+import { getRecommendations } from "../actions/getRecommendation";
 
 export default function Home() {
   const [weather, setWeather] = useState<{ temp: number; description: string; icon: string; city: string } | null>(null);
+  const [input, setInput] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -42,16 +44,42 @@ export default function Home() {
     }
   }, []);
 
+  const handleOnChange = (event: any) => {
+      setInput(event.target.value)
+  }
+
+  const handleSubmit = async () => {
+    try {
+      const result = await getRecommendations(
+        input, 
+        weather?.temp.toString() || "Unknown",
+        weather?.city || "Unknown",
+        weather?.description || "Unknown"
+      );
+  
+      // Yanıtı temizleyip sadece mekan önerilerini almak için:
+      let responseText = result[0]?.generated_text || "";
+      responseText = responseText.replace(/\[INST\].*?\[\/INST\]/s, "").trim(); // Promptu kaldır
+  
+      // Önerileri satırlara böl ve liste olarak sakla
+      const recommendationsList = responseText.split("\n").filter((line:string) => line.match(/^\d+\./));
+
+      console.log('recom', recommendationsList)
+      
+    } catch (error) {
+
+    }
+  }
+
   return (
     <div className="flex items-center justify-center h-screen">
       <Card className="w-full max-w-2xl mx-auto overflow-hidden">
         <CardContent className="p-0">
           <div className="flex flex-col sm:flex-row">
             
-            {/* Hava Durumu Bilgisi */}
             <div className="sm:w-1/3 bg-gradient-to-br from-blue-400 to-blue-600 p-4 text-white flex flex-col justify-center items-center">
               {loading ? (
-                <p>Yükleniyor...</p>
+                <p>Loading...</p>
               ) : error ? (
                 <p className="text-sm text-red-500">{error}</p>
               ) : (
@@ -76,11 +104,10 @@ export default function Home() {
               )}
             </div>
 
-            {/* Girdi Alanı ve Buton */}
             <div className="sm:w-2/3 p-6 bg-gray-50 flex flex-col justify-center">
               <div className="space-y-4 w-full max-w-md mx-auto">
-                <Input placeholder="Enter your mood..." className="w-full" />
-                <Button className="w-full">Get Recommendation</Button>
+                <Input placeholder="Enter your mood..." className="w-full" value={input} onChange={handleOnChange}/>
+                <Button className="w-full" onClick={handleSubmit}>Get Recommendation</Button>
               </div>
             </div>
           </div>
